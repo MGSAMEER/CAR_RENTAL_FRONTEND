@@ -189,7 +189,7 @@ This project is licensed under the MIT License.
 
 <div align="center">
 
-## Chetan Nikam
+## Sameer Kanade
 
 <img src="https://img.shields.io/badge/Developer-FullStack-blue?style=for-the-badge" />
 
