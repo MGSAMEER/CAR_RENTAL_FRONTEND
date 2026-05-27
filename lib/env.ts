@@ -7,7 +7,11 @@ export const getApiBaseUrl = () => {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
   if (!apiUrl?.trim()) {
-    return null;
+    // Fail-safe fallbacks for a zero-config Developer & Production experience:
+    if (process.env.NODE_ENV === 'production') {
+      return 'https://car-rental-avtw.onrender.com/api/v1';
+    }
+    return 'http://localhost:5000/api/v1';
   }
 
   return ensureApiVersion(apiUrl);
