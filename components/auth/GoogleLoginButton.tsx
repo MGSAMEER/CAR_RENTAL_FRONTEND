@@ -6,6 +6,7 @@ import { useAuthStore } from '@/lib/store';
 import { authApi } from '@/lib/services';
 import toast from 'react-hot-toast';
 import { useState } from 'react';
+import { getGoogleClientId } from '@/lib/env';
 
 interface Props {
   /** Called after successful login — defaults to pushing /cars */
@@ -16,6 +17,17 @@ export default function GoogleLoginButton({ onSuccess }: Props) {
   const router = useRouter();
   const { setGoogleUser } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
+  const clientId = getGoogleClientId();
+
+  if (!clientId) {
+    return (
+      <div className="w-full text-center p-3 bg-slate-50 border border-slate-200 rounded-xl">
+        <p className="text-xs text-slate-500 font-medium">
+          Google Login is currently disabled (missing Client ID).
+        </p>
+      </div>
+    );
+  }
 
   const handleSuccess = async (credentialResponse: CredentialResponse) => {
     const idToken = credentialResponse.credential;

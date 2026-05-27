@@ -9,7 +9,19 @@ import { z } from 'zod';
 import { Car, Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { useAuthStore } from '@/lib/store';
 import toast from 'react-hot-toast';
-import GoogleLoginButton from '@/components/auth/GoogleLoginButton';
+import dynamic from 'next/dynamic';
+
+const GoogleLoginButton = dynamic(
+  () => import('@/components/auth/GoogleLoginButton'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full flex justify-center py-2 animate-pulse">
+        <div className="h-11 w-full max-w-[400px] bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700" />
+      </div>
+    ),
+  }
+);
 
 const loginSchema = z.object({
   email: z.string().email('Enter a valid email address'),

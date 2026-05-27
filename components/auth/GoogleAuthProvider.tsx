@@ -3,19 +3,20 @@
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { getGoogleClientId } from '@/lib/env';
 
-const clientId = getGoogleClientId();
-
 export default function GoogleAuthProvider({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  if (!clientId) {
-    return <>{children}</>;
-  }
+  const clientId = getGoogleClientId();
+
+  // If clientId is missing (e.g., during build-time prerendering on Vercel),
+  // we provide a fallback dummy client ID so that the context Provider is always mounted.
+  // This satisfies the library constraint and prevents build-time compilation crashes.
+  const resolvedClientId = clientId || '1234567890-dummyclientid.apps.googleusercontent.com';
 
   return (
-    <GoogleOAuthProvider clientId={clientId}>
+    <GoogleOAuthProvider clientId={resolvedClientId}>
       {children}
     </GoogleOAuthProvider>
   );
