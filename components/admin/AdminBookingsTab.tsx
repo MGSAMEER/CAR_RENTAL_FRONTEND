@@ -54,9 +54,10 @@ export default function AdminBookingsTab({ bookings, setBookings }: Props) {
     if (!confirm('Cancel this booking?')) return;
     try {
       const res = await bookingsApi.cancel(id);
-      setBookings(prev => prev.map(b => b.id === id ? res.data : b));
-      const refundInfo = res.data?.refundAmount 
-        ? `Refund: ₹${res.data.refundAmount}`
+      const updatedBooking = res.data?.data || res.data;
+      setBookings(prev => prev.map(b => b.id === id ? updatedBooking : b));
+      const refundInfo = updatedBooking?.refundAmount 
+        ? `Refund: ₹${updatedBooking.refundAmount}`
         : 'No refund applicable';
       toast.success(`Booking cancelled. ${refundInfo}`);
     } catch (err: any) {

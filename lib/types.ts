@@ -3,7 +3,7 @@ export interface User {
   name: string;
   email: string;
   role: 'user' | 'admin';
-  avatar?: string;              // Google profile picture URL
+  avatar?: string;
   authProvider?: 'local' | 'google';
   isEmailVerified?: boolean;
   createdAt?: string;
@@ -66,6 +66,11 @@ export interface Booking {
   car?: Car;
   user?: User;
   days?: number;
+  cancellationReason?: string;
+  cancelledAt?: string;
+  refundAmount?: number;
+  refundStatus?: 'not_requested' | 'pending' | 'processed' | 'failed';
+  refundId?: string;
 }
 
 export interface ApiResponse<T> {

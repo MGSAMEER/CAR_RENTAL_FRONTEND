@@ -86,13 +86,13 @@ export default function BookingsPage() {
   const handleCancel = async (bookingId: string, reason?: string) => {
     try {
       const res = await bookingsApi.cancel(bookingId, reason);
-      const updatedBooking = res.data?.data;
+      const updatedBooking = res.data?.data || res.data;
       
       if (updatedBooking) {
         setBookings((prev) => prev.map((b) => b.id === bookingId ? updatedBooking : b));
         
         const refundInfo = updatedBooking.refundAmount 
-          ? `Refund: ₹${updatedBooking.refundAmount} (${updatedBooking.refundStatus === 'processed' ? 'processed' : 'pending'})`
+          ? `Refund: ₹${updatedBooking.refundAmount}`
           : 'No refund applicable';
         
         toast.success(`Booking cancelled! ${refundInfo}`, { duration: 6000 });
