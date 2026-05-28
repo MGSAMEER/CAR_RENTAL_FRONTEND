@@ -11,7 +11,7 @@ import Badge from '@/components/ui/Badge';
 import LeaveReviewModal from '@/components/cars/LeaveReviewModal';
 import CancelBookingModal from '@/components/bookings/CancelBookingModal';
 import type { Booking } from '@/lib/types';
-import { format } from 'date-fns';
+import { formatDate } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
 const statusConfig = {
@@ -19,6 +19,15 @@ const statusConfig = {
   cancelled:  { label: 'Cancelled',  variant: 'cancelled' as const,  icon: XCircle },
   completed:  { label: 'Completed',  variant: 'completed' as const,  icon: CheckCircle2 },
   active:     { label: 'Active',     variant: 'confirmed' as const,  icon: Clock },
+};
+
+// Safe days calculation
+const calculateDays = (startDate: string | Date | undefined, endDate: string | Date | undefined): number => {
+  if (!startDate || !endDate) return 0;
+  const start = typeof startDate === 'string' ? new Date(startDate) : startDate;
+  const end = typeof endDate === 'string' ? new Date(endDate) : endDate;
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) return 0;
+  return Math.max(1, Math.ceil((end.getTime() - start.getTime()) / 86400000) + 1);
 };
 
 export default function BookingsPage() {
@@ -86,13 +95,13 @@ export default function BookingsPage() {
   const handleCancel = async (bookingId: string, reason?: string) => {
     try {
       const res = await bookingsApi.cancel(bookingId, reason);
-      const updatedBooking = res.data as unknown as Booking;
+      const updatedBooking = res.data?.data || res.data;
       
-      if (updatedBooking) {
-        setBookings((prev) => prev.map((b) => b.id === bookingId ? updatedBooking : b));
+      if (updatedBooking && typeof updatedBooking === 'object' && 'id' in updatedBooking) {
+        setBookings((prev) => prev.map((b) => b.id === bookingId ? (updatedBooking as Booking) : b));
         
-        const refundInfo = updatedBooking.refundAmount 
-          ? `Refund: ₹${updatedBooking.refundAmount}`
+        const refundInfo = (updatedBooking as Booking).refundAmount 
+          ? `Refund: ₹${(updatedBooking as Booking).refundAmount}`
           : 'No refund applicable';
         
         toast.success(`Booking cancelled! ${refundInfo}`, { duration: 6000 });
@@ -154,9 +163,7 @@ export default function BookingsPage() {
           {bookings.map((booking) => {
             const status = statusConfig[booking.status] || statusConfig.confirmed;
             const StatusIcon = status.icon;
-            const days = Math.ceil(
-              (new Date(booking.endDate).getTime() - new Date(booking.startDate).getTime()) / 86400000
-            );
+            const days = calculateDays(booking.startDate, booking.endDate);
 
             return (
               <div key={booking.id} className="card-flat p-4 sm:p-6 hover:shadow-md transition-shadow duration-200 animate-slide-up" id={`booking-card-${booking.id}`}>
@@ -174,12 +181,12 @@ export default function BookingsPage() {
                       )}
                       <div className="flex flex-col gap-1 mt-2 text-sm text-gray-500">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium">{format(new Date(booking.startDate), 'dd MMM yyyy')}</span>
+                          <span className="font-medium">{formatDate(booking.startDate, 'Invalid date')}</span>
                           <span className="text-gray-300">→</span>
-                          <span className="font-medium">{format(new Date(booking.endDate), 'dd MMM yyyy')}</span>
+                          <span className="font-medium">{formatDate(booking.endDate, 'Invalid date')}</span>
                         </div>
                         <div className="text-xs text-gray-400">
-                          {days} day{days !== 1 ? 's' : ''}
+                          {days > 0 ? `${days} day${days !== 1 ? 's' : ''}` : 'Dates unavailable'}
                         </div>
                       </div>
                     </div>
@@ -190,7 +197,7 @@ export default function BookingsPage() {
                       <Badge variant={status.variant} size="sm" icon={<StatusIcon size={12} />}>
                         {status.label}
                       </Badge>
-                      <p className="font-bold text-gray-900 whitespace-nowrap">₹{Number(booking.totalCost).toLocaleString()}</p>
+                      <p className="font-bold text-gray-900 whitespace-nowrap">₹{Number(booking.totalCost || 0).toLocaleString()}</p>
                     </div>
                     <div className="flex gap-2">
                       {booking.status === 'confirmed' && (

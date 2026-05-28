@@ -1,8 +1,8 @@
 'use client';
 
-import { format } from 'date-fns';
 import type { Booking } from '@/lib/types';
 import { bookingsApi } from '@/lib/services';
+import { formatDate } from '@/lib/utils';
 import toast from 'react-hot-toast';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
@@ -10,18 +10,22 @@ import Badge from '@/components/ui/Badge';
 interface Props { bookings: Booking[]; setBookings: React.Dispatch<React.SetStateAction<Booking[]>>; }
 
 function MobileBookingCard({ booking, onCancel }: { booking: Booking; onCancel: (id: string) => void }) {
+  const days = formatDate(booking.startDate, null) && formatDate(booking.endDate, null) 
+    ? Math.max(1, Math.ceil((new Date(booking.endDate).getTime() - new Date(booking.startDate).getTime()) / 86400000) + 1)
+    : 0;
+
   return (
     <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm p-4 mb-3 last:mb-0">
       <div className="flex justify-between items-start mb-3">
         <div className="flex-1 min-w-0">
-          <p className="text-base font-bold text-slate-900 dark:text-white truncate">{booking.car?.name}</p>
-          <p className="text-sm text-slate-700 dark:text-slate-200">{booking.user?.name}</p>
-          <p className="text-xs text-slate-400 truncate">{booking.user?.email}</p>
+          <p className="text-base font-bold text-slate-900 dark:text-white truncate">{booking.car?.name || '—'}</p>
+          <p className="text-sm text-slate-700 dark:text-slate-200">{booking.user?.name || '—'}</p>
+          <p className="text-xs text-slate-400 truncate">{booking.user?.email || '—'}</p>
         </div>
         <div className="text-right shrink-0 ml-2">
-          <p className="text-lg font-bold text-slate-800 dark:text-white">₹{Number(booking.totalCost).toLocaleString()}</p>
+          <p className="text-lg font-bold text-slate-800 dark:text-white">₹{Number(booking.totalCost || 0).toLocaleString()}</p>
           <Badge variant={booking.status === 'cancelled' ? 'cancelled' : 'confirmed'} size="sm" className="mt-1">
-            {booking.status}
+            {booking.status || 'unknown'}
           </Badge>
         </div>
       </div>
@@ -37,7 +41,7 @@ function MobileBookingCard({ booking, onCancel }: { booking: Booking; onCancel: 
           )}
         </div>
         <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
-          <span>{format(new Date(booking.startDate), 'dd MMM')} → {format(new Date(booking.endDate), 'dd MMM yy')}</span>
+          <span>{formatDate(booking.startDate, '—')} → {formatDate(booking.endDate, '—')}</span>
           {(booking.status === 'confirmed' || booking.status === 'active') && (
             <Button id={`mobile-cancel-booking-${booking.id}`} onClick={() => onCancel(booking.id)} variant="danger" size="sm">
               Cancel
@@ -54,7 +58,7 @@ export default function AdminBookingsTab({ bookings, setBookings }: Props) {
     if (!confirm('Cancel this booking?')) return;
     try {
       const res = await bookingsApi.cancel(id);
-      const updatedBooking = res.data as unknown as Booking;
+      const updatedBooking = res.data?.data || res.data;
       setBookings(prev => prev.map(b => b.id === id ? updatedBooking : b));
       const refundInfo = updatedBooking?.refundAmount 
         ? `Refund: ₹${updatedBooking.refundAmount}`
@@ -106,15 +110,15 @@ export default function AdminBookingsTab({ bookings, setBookings }: Props) {
             <tbody className="divide-y divide-slate-50 dark:divide-slate-700/50">
               {bookings.map(b => (
                 <tr key={b.id} id={`admin-booking-row-${b.id}`} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
-                  <td className="px-5 py-3.5 font-semibold text-slate-900 dark:text-white">{b.car?.name}</td>
+                  <td className="px-5 py-3.5 font-semibold text-slate-900 dark:text-white">{b.car?.name || '—'}</td>
                   <td className="px-5 py-3.5">
-                    <p className="text-slate-700 dark:text-slate-200">{b.user?.name}</p>
-                    <p className="text-xs text-slate-400">{b.user?.email}</p>
+                    <p className="text-slate-700 dark:text-slate-200">{b.user?.name || '—'}</p>
+                    <p className="text-xs text-slate-400">{b.user?.email || '—'}</p>
                   </td>
                   <td className="px-5 py-3.5 text-slate-600 dark:text-slate-300 whitespace-nowrap">
-                    {format(new Date(b.startDate), 'dd MMM')} → {format(new Date(b.endDate), 'dd MMM yy')}
+                    {formatDate(b.startDate, '—')} → {formatDate(b.endDate, '—')}
                   </td>
-                  <td className="px-5 py-3.5 font-bold text-slate-800 dark:text-white">₹{Number(b.totalCost).toLocaleString()}</td>
+                  <td className="px-5 py-3.5 font-bold text-slate-800 dark:text-white">₹{Number(b.totalCost || 0).toLocaleString()}</td>
                   <td className="px-5 py-3.5">
                     <Badge variant={b.paymentStatus === 'paid' ? 'available' : b.paymentStatus === 'pending' ? 'warning' : b.paymentStatus === 'failed' ? 'unavailable' : 'cancelled'} size="sm">
                       {b.paymentStatus || 'pending'}
@@ -122,7 +126,7 @@ export default function AdminBookingsTab({ bookings, setBookings }: Props) {
                   </td>
                   <td className="px-5 py-3.5">
                     <Badge variant={b.status === 'confirmed' || b.status === 'active' ? 'confirmed' : b.status === 'completed' ? 'completed' : 'cancelled'} size="sm">
-                      {b.status}
+                      {b.status || 'unknown'}
                     </Badge>
                   </td>
                   <td className="px-5 py-3.5">

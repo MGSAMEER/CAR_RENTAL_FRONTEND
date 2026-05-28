@@ -7,7 +7,7 @@ import { bookingsApi } from '@/lib/services';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import PickupMap from '@/components/bookings/PickupMap';
 import type { Booking } from '@/lib/types';
-import { format } from 'date-fns';
+import { formatDate } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
 export default function BookingDetailPage() {
@@ -29,9 +29,14 @@ export default function BookingDetailPage() {
   if (loading) return <LoadingSpinner fullPage text="Loading booking details..." />;
   if (!booking) return null;
 
-  const days = booking ? Math.max(1, Math.ceil(
-    (new Date(booking.endDate).getTime() - new Date(booking.startDate).getTime()) / 86400000
-  )) : 0;
+  // Safe days calculation
+  const days = booking.startDate && booking.endDate 
+    ? Math.max(1, Math.ceil((new Date(booking.endDate).getTime() - new Date(booking.startDate).getTime()) / 86400000) + 1)
+    : 0;
+
+  // Safe date check
+  const hasValidDates = booking.startDate && booking.endDate && 
+    !isNaN(new Date(booking.startDate).getTime()) && !isNaN(new Date(booking.endDate).getTime());
 
   return (
     <div className="page-container animate-fade-in pb-20">
@@ -47,12 +52,14 @@ export default function BookingDetailPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div>
                 <p className="text-xs font-bold text-primary-500 uppercase tracking-widest mb-1">Booking Confirmed</p>
-                <h1 className="text-3xl font-bold text-slate-900 dark:text-white">#{booking.id.slice(0, 8).toUpperCase()}</h1>
-                <p className="text-slate-500 dark:text-slate-400 mt-1">Booked on {format(new Date(booking.createdAt), 'dd MMM yyyy, hh:mm a')}</p>
+                <h1 className="text-3xl font-bold text-slate-900 dark:text-white">#{booking.id?.slice(0, 8).toUpperCase() || 'N/A'}</h1>
+                <p className="text-slate-500 dark:text-slate-400 mt-1">
+                  Booked on {formatDate(booking.createdAt, 'Unknown date')}
+                </p>
               </div>
               <div className="flex items-center gap-3 bg-green-50 dark:bg-green-900/20 px-6 py-3 rounded-2xl border border-green-100 dark:border-green-900/30">
                 <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
-                <span className="font-bold text-green-700 dark:text-green-400 capitalize">{booking.status}</span>
+                <span className="font-bold text-green-700 dark:text-green-400 capitalize">{booking.status || 'unknown'}</span>
               </div>
             </div>
           </div>
@@ -67,7 +74,7 @@ export default function BookingDetailPage() {
                 <div className="flex items-center gap-4">
                   <div className="w-20 h-20 bg-slate-50 dark:bg-slate-800 rounded-2xl overflow-hidden flex-shrink-0">
                     {booking.car?.imageUrl ? (
-                      <img src={booking.car.imageUrl} alt={booking.car.name} className="w-full h-full object-cover" />
+                      <img src={booking.car.imageUrl} alt={booking.car.name || 'Car'} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         <Car size={32} className="text-slate-300" />
@@ -75,8 +82,8 @@ export default function BookingDetailPage() {
                     )}
                   </div>
                   <div>
-                    <p className="text-sm text-primary-600 font-bold uppercase tracking-wide">{booking.car?.brand}</p>
-                    <h3 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">{booking.car?.name}</h3>
+                    <p className="text-sm text-primary-600 font-bold uppercase tracking-wide">{booking.car?.brand || 'Unknown'}</p>
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">{booking.car?.name || 'Unknown Vehicle'}</h3>
                     <p className="text-xs text-slate-500 mt-1 capitalize">{booking.car?.transmission} · {booking.car?.fuelType}</p>
                   </div>
                 </div>
@@ -85,21 +92,33 @@ export default function BookingDetailPage() {
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
                    <Calendar size={20} className="text-primary-500" /> Rental Schedule
                 </h2>
-                <div className="grid grid-cols-2 gap-6">
-                  <div>
-                    <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-1">Pickup Date</p>
-                    <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{format(new Date(booking.startDate), 'eee, dd MMM yyyy')}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">From 09:00 AM</p>
+                {hasValidDates ? (
+                  <>
+                    <div className="grid grid-cols-2 gap-6">
+                      <div>
+                        <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-1">Pickup Date</p>
+                        <p className="text-sm font-bold text-slate-800 dark:text-slate-100">
+                          {formatDate(booking.startDate)}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-0.5">From 09:00 AM</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-1">Return Date</p>
+                        <p className="text-sm font-bold text-slate-800 dark:text-slate-100">
+                          {formatDate(booking.endDate)}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-0.5">By 08:00 PM</p>
+                      </div>
+                    </div>
+                    <div className="mt-4 inline-flex items-center gap-2 px-3 py-1 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400 rounded-full text-xs font-bold">
+                       <Clock size={12} /> Duration: {days} {days === 1 ? 'Day' : 'Days'}
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-amber-600 dark:text-amber-400">
+                    Dates unavailable - booking may have been modified
                   </div>
-                  <div>
-                    <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-1">Return Date</p>
-                    <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{format(new Date(booking.endDate), 'eee, dd MMM yyyy')}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">By 08:00 PM</p>
-                  </div>
-                </div>
-                <div className="mt-4 inline-flex items-center gap-2 px-3 py-1 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400 rounded-full text-xs font-bold">
-                   <Clock size={12} /> Duration: {days} {days === 1 ? 'Day' : 'Days'}
-                </div>
+                )}
               </div>
             </div>
           </div>
@@ -128,15 +147,15 @@ export default function BookingDetailPage() {
              <div className="space-y-4">
                 <div className="flex justify-between text-slate-400 text-sm">
                    <span>Daily Rate</span>
-                   <span>₹{Number(booking.car?.pricePerDay).toLocaleString()}</span>
+                   <span>₹{Number(booking.car?.pricePerDay || 0).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-slate-400 text-sm">
                    <span>Duration</span>
-                   <span>{days} Day{days !== 1 ? 's' : ''}</span>
+                   <span>{days > 0 ? `${days} Day${days !== 1 ? 's' : ''}` : 'N/A'}</span>
                 </div>
                 <div className="pt-4 border-t border-slate-800 flex justify-between items-baseline">
                    <span className="font-bold text-lg">Total Paid</span>
-                   <span className="text-2xl font-bold text-primary-400">₹{Number(booking.totalCost).toLocaleString()}</span>
+                   <span className="text-2xl font-bold text-primary-400">₹{Number(booking.totalCost || 0).toLocaleString()}</span>
                 </div>
                 <div className="mt-6 flex items-center gap-2 justify-center bg-white/5 py-2 rounded-xl border border-white/10 text-xs text-slate-400">
                    <div className="w-2 h-2 bg-green-500 rounded-full" />
@@ -151,11 +170,11 @@ export default function BookingDetailPage() {
                 <User size={20} className="text-primary-500" /> Renter Information
              </h2>
              <div className="space-y-1">
-                <p className="font-bold text-slate-900 dark:text-white">{booking.user?.name}</p>
-                <p className="text-sm text-slate-500 dark:text-slate-400">{booking.user?.email}</p>
+                <p className="font-bold text-slate-900 dark:text-white">{booking.user?.name || '—'}</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">{booking.user?.email || '—'}</p>
              </div>
              <div className="mt-6 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl text-xs text-slate-500">
-                This booking is non-transferable. Please ensure the renter name matches your Driving License.
+               This booking is non-transferable. Please ensure the renter name matches your Driving License.
              </div>
           </div>
         </div>
