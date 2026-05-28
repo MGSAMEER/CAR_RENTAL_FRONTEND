@@ -10,6 +10,7 @@ import { Car, Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { useAuthStore } from '@/lib/store';
 import toast from 'react-hot-toast';
 import dynamic from 'next/dynamic';
+import Button from '@/components/ui/Button';
 
 const GoogleLoginButton = dynamic(
   () => import('@/components/auth/GoogleLoginButton'),
@@ -127,14 +128,17 @@ export default function LoginPage() {
               {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
             </div>
 
-            <button
+            <Button
               id="login-submit-btn"
               type="submit"
               disabled={isSubmitting}
-              className="btn-primary w-full py-3"
+              variant="primary"
+              fullWidth
+              isLoading={isSubmitting}
+              className="py-3"
             >
-              {isSubmitting ? 'Signing in...' : 'Sign In'}
-            </button>
+              Sign In
+            </Button>
           </form>
 
           {/* Demo credentials */}

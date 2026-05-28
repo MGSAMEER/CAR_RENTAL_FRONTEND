@@ -6,6 +6,7 @@ import { User, Mail, Calendar, BookOpen, Edit2, Save, X, FileBadge, UploadCloud,
 import { useAuthStore } from '@/lib/store';
 import { usersApi } from '@/lib/services';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import Button from '@/components/ui/Button';
 import type { Booking } from '@/lib/types';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
@@ -107,14 +108,12 @@ export default function ProfilePage() {
                   className="input text-center"
                 />
                 <div className="flex gap-2 justify-center">
-                  <button id="save-profile-btn" onClick={handleSave} disabled={saving}
-                    className="btn-primary text-sm flex items-center gap-1.5">
-                    <Save size={14} /> {saving ? 'Saving...' : 'Save'}
-                  </button>
-                  <button onClick={() => { setEditing(false); setName(user?.name || ''); }}
-                    className="btn-ghost text-sm flex items-center gap-1.5">
-                    <X size={14} /> Cancel
-                  </button>
+                  <Button id="save-profile-btn" onClick={handleSave} disabled={saving} variant="primary" size="sm" isLoading={saving} icon={<Save size={14} />} iconPosition="left">
+                    Save
+                  </Button>
+                  <Button onClick={() => { setEditing(false); setName(user?.name || ''); }} variant="ghost" size="sm" icon={<X size={14} />} iconPosition="left">
+                    Cancel
+                  </Button>
                 </div>
               </div>
             ) : (
@@ -217,9 +216,9 @@ export default function ProfilePage() {
                       </div>
                     </div>
                   </div>
-                  <button type="submit" disabled={uploading} className="btn-primary w-full md:w-auto">
-                    {uploading ? 'Uploading...' : 'Submit Verification'}
-                  </button>
+                  <Button type="submit" disabled={uploading} variant="primary" fullWidth={false} isLoading={uploading} className="w-full md:w-auto">
+                    Submit Verification
+                  </Button>
                 </form>
               )}
             </div>

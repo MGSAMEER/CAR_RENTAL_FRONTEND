@@ -6,16 +6,18 @@ import { Calendar, Car, XCircle, CheckCircle2, Clock, AlertCircle, RotateCw } fr
 import { bookingsApi } from '@/lib/services';
 import { useAuthStore } from '@/lib/store';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import Button from '@/components/ui/Button';
+import Badge from '@/components/ui/Badge';
 import LeaveReviewModal from '@/components/cars/LeaveReviewModal';
 import type { Booking } from '@/lib/types';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 
 const statusConfig = {
-  confirmed:  { label: 'Confirmed',  cls: 'badge-confirmed',  icon: CheckCircle2 },
-  cancelled:  { label: 'Cancelled',  cls: 'badge-cancelled',  icon: XCircle },
-  completed:  { label: 'Completed',  cls: 'badge-completed',  icon: CheckCircle2 },
-  active:     { label: 'Active',     cls: 'badge-confirmed',  icon: Clock },
+  confirmed:  { label: 'Confirmed',  variant: 'confirmed' as const,  icon: CheckCircle2 },
+  cancelled:  { label: 'Cancelled',  variant: 'cancelled' as const,  icon: XCircle },
+  completed:  { label: 'Completed',  variant: 'completed' as const,  icon: CheckCircle2 },
+  active:     { label: 'Active',     variant: 'confirmed' as const,  icon: Clock },
 };
 
 export default function BookingsPage() {
@@ -139,12 +141,7 @@ export default function BookingsPage() {
               Check browser console for detailed error logs. Network: {navigator.onLine ? 'Online ✓' : 'Offline ✗'}
             </p>
           </div>
-          <button
-            onClick={handleRetry}
-            className="flex-shrink-0 px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm font-medium flex items-center gap-1"
-          >
-            <RotateCw size={14} /> Retry
-          </button>
+<Button onClick={handleRetry} variant="danger" size="sm" icon={<RotateCw size={14} />}>Retry</Button>
         </div>
       )}
 
@@ -153,9 +150,9 @@ export default function BookingsPage() {
           <Calendar size={56} className="text-gray-300 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-700 mb-2">No bookings yet</h3>
           <p className="text-gray-400 text-sm mb-6">Start by browsing our available cars</p>
-          <button onClick={() => router.push('/cars')} className="btn-primary" id="browse-cars-from-bookings-btn">
+          <Button onClick={() => router.push('/cars')} variant="primary" id="browse-cars-from-bookings-btn">
             Browse Cars
-          </button>
+          </Button>
         </div>
       ) : bookings.length > 0 ? (
         <div className="space-y-4">
@@ -167,57 +164,56 @@ export default function BookingsPage() {
             );
 
             return (
-              <div key={booking.id} className="card-flat p-6 hover:shadow-md transition-shadow duration-200 animate-slide-up" id={`booking-card-${booking.id}`}>
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div key={booking.id} className="card-flat p-4 sm:p-6 hover:shadow-md transition-shadow duration-200 animate-slide-up" id={`booking-card-${booking.id}`}>
+                <div className="flex flex-col gap-4">
                   <div className="flex items-start gap-4">
                     <div className="w-12 h-12 bg-primary-50 rounded-xl flex items-center justify-center flex-shrink-0">
                       <Car size={22} className="text-primary-500" />
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-gray-900 truncate">
                         {booking.car?.brand} {booking.car?.name}
                       </h3>
                       {user?.role === 'admin' && booking.user && (
-                        <p className="text-xs text-gray-400">{booking.user.name} · {booking.user.email}</p>
+                        <p className="text-xs text-gray-400 truncate">{booking.user.name} · {booking.user.email}</p>
                       )}
-                      <div className="flex items-center gap-3 mt-1.5 text-sm text-gray-500">
-                        <span>{format(new Date(booking.startDate), 'dd MMM yyyy')}</span>
-                        <span>→</span>
-                        <span>{format(new Date(booking.endDate), 'dd MMM yyyy')}</span>
-                        <span className="text-gray-300">·</span>
-                        <span>{days} day{days !== 1 ? 's' : ''}</span>
+                      {/* Date range: vertical stack on mobile, horizontal on desktop */}
+                      <div className="flex flex-col gap-1 mt-2 text-sm text-gray-500">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{format(new Date(booking.startDate), 'dd MMM yyyy')}</span>
+                          <span className="text-gray-300">→</span>
+                          <span className="font-medium">{format(new Date(booking.endDate), 'dd MMM yyyy')}</span>
+                        </div>
+                        <div className="text-xs text-gray-400">
+                          {days} day{days !== 1 ? 's' : ''}
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4 sm:flex-col sm:items-end">
-                    <span className={status.cls}>
-                      <StatusIcon size={12} /> {status.label}
-                    </span>
-                    <p className="font-bold text-gray-900">₹{Number(booking.totalCost).toLocaleString()}</p>
-                    {booking.status === 'confirmed' && (
-                      <button
-                        id={`cancel-booking-btn-${booking.id}`}
-                        onClick={() => handleCancel(booking.id)}
-                        className="text-xs text-red-600 hover:text-red-700 font-medium"
-                      >
-                        Cancel
-                      </button>
-                    )}
-                    {booking.status === 'completed' && booking.car && (
-                      <button
-                        onClick={() => setReviewCar({ id: booking.car!.id, name: `${booking.car!.brand} ${booking.car!.name}` })}
-                        className="text-xs text-primary-600 hover:text-primary-700 font-medium"
-                      >
-                        Leave a Review
-                      </button>
-                    )}
-                    <button
-                      onClick={() => router.push(`/bookings/${booking.id}`)}
-                      className="text-xs text-slate-500 hover:text-slate-900 dark:hover:text-slate-200 font-semibold underline underline-offset-4"
-                    >
-                      View Details & Pickup Map
-                    </button>
+                  {/* Status, price, and actions: stack on mobile, horizontal on desktop */}
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 pt-3 sm:pt-0 border-t sm:border-t-0 sm:border-l border-gray-200 dark:border-gray-700 sm:pl-4">
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      <Badge variant={status.variant} size="sm" icon={<StatusIcon size={12} />}>
+                        {status.label}
+                      </Badge>
+                      <p className="font-bold text-gray-900 whitespace-nowrap">₹{Number(booking.totalCost).toLocaleString()}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      {booking.status === 'confirmed' && (
+                        <Button id={`cancel-booking-btn-${booking.id}`} onClick={() => handleCancel(booking.id)} variant="danger" size="sm">
+                          Cancel
+                        </Button>
+                      )}
+                      {booking.status === 'completed' && booking.car && (
+                        <Button onClick={() => setReviewCar({ id: booking.car!.id, name: `${booking.car!.brand} ${booking.car!.name}` })} variant="ghost" size="sm">
+                          Leave a Review
+                        </Button>
+                      )}
+                      <Button onClick={() => router.push(`/bookings/${booking.id}`)} variant="outline" size="sm">
+                        View Details & Pickup Map
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>

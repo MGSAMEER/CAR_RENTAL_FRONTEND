@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { carsApi } from '@/lib/services';
 import StarRating from '../ui/StarRating';
+import Button from '@/components/ui/Button';
 import { X, MessageSquare, Save } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -57,12 +58,12 @@ export default function LeaveReviewModal({ carId, carName, onClose, onSuccess }:
           </div>
 
           <div className="flex gap-3 pt-2">
-            <button onClick={handleSubmit} disabled={saving} className="btn-primary flex-1 flex items-center justify-center gap-2">
-              <Save size={16} /> {saving ? 'Submitting...' : 'Submit Review'}
-            </button>
-            <button onClick={onClose} disabled={saving} className="btn-secondary flex-1">
+            <Button onClick={handleSubmit} disabled={saving} variant="primary" fullWidth isLoading={saving} icon={<Save size={16} />} iconPosition="left">
+              Submit Review
+            </Button>
+            <Button onClick={onClose} disabled={saving} variant="secondary" fullWidth>
               Cancel
-            </button>
+            </Button>
           </div>
         </div>
       </div>

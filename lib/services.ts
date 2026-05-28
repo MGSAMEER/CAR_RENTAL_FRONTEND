@@ -9,7 +9,6 @@ export const authApi = {
   login: (data: LoginCredentials) =>
     api.post<ApiResponse<{ accessToken: string; refreshToken: string; user: User }>>('/auth/login', data),
 
-  /** Exchanges a Google ID token for our own JWT pair */
   googleLogin: (idToken: string) =>
     api.post<ApiResponse<{ accessToken: string; refreshToken: string; user: User }>>('/auth/google', { idToken }),
 
@@ -21,6 +20,12 @@ export const authApi = {
 
   verifyEmail: (token: string) =>
     api.get<ApiResponse<{ message: string }>>(`/auth/verify-email/${token}`),
+
+  forgotPassword: (data: { email: string }) =>
+    api.post<ApiResponse<{ message: string }>>('/auth/forgot-password', data),
+
+  resetPassword: (token: string, data: { password: string }) =>
+    api.post<ApiResponse<{ message: string }>>(`/auth/reset-password/${token}`, data),
 };
 
 // ---- CARS ----
@@ -153,4 +158,3 @@ export const branchesApi = {
   delete: (id: string) =>
     api.delete(`/branches/${id}`),
 };
-

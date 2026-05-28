@@ -7,6 +7,7 @@ import { Car, Menu, X, User, LogOut } from 'lucide-react';
 import { useAuthStore } from '@/lib/store';
 import toast from 'react-hot-toast';
 import ThemeToggle from '@/components/ui/ThemeToggle';
+import Button from '@/components/ui/Button';
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -80,14 +81,10 @@ export default function Navbar() {
                     <span className="text-xs bg-blue-600 dark:bg-blue-600 text-white px-1.5 py-0.5 rounded-md">Admin</span>
                   )}
                 </div>
-                <button
-                  id="nav-logout-btn"
-                  onClick={handleLogout}
-                  className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all duration-200"
-                >
+                <Button id="nav-logout-btn" onClick={handleLogout} variant="ghost" size="sm">
                   <LogOut size={15} />
                   Logout
-                </button>
+                </Button>
               </div>
             ) : (
               <div className="flex items-center gap-2">
@@ -119,7 +116,7 @@ export default function Navbar() {
       {menuOpen && (
         <div className="md:hidden bg-white dark:bg-slate-800 border-t border-gray-100 dark:border-slate-700 animate-fade-in transition-colors duration-300">
           <div className="px-4 py-4 space-y-1">
-            {navLinks.map((link) => (
+{navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
@@ -135,12 +132,9 @@ export default function Navbar() {
             ))}
             <div className="pt-3 border-t border-gray-100 dark:border-slate-700">
               {isAuthenticated ? (
-                <button
-                  onClick={handleLogout}
-                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
-                >
+                <Button onClick={handleLogout} variant="ghost" size="sm" className="w-full justify-start text-red-600 dark:text-red-400">
                   <LogOut size={15} /> Logout
-                </button>
+                </Button>
               ) : (
                 <div className="space-y-2">
                   <Link href="/login" onClick={() => setMenuOpen(false)} className="block w-full btn-secondary text-sm text-center">Sign In</Link>

@@ -1,6 +1,7 @@
 'use client';
 
 import { MapPin, Phone, Navigation, Clock } from 'lucide-react';
+import Button from '@/components/ui/Button';
 
 interface PickupMapProps {
   branch: {
@@ -44,14 +45,14 @@ export default function PickupMap({ branch }: PickupMapProps) {
               <span>{branch.address}, {branch.city}</span>
             </p>
           </div>
-          <a
-            href={googleMapsUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn-primary py-2 px-4 text-sm flex items-center gap-2"
-          >
-            <Navigation size={14} /> Navigate
-          </a>
+<a
+             href={googleMapsUrl}
+             target="_blank"
+             rel="noopener noreferrer"
+             className="inline-flex items-center gap-2 bg-blue-600 text-white font-medium py-2 px-4 rounded-lg text-sm hover:bg-blue-500 active:scale-95 transition-all duration-200 shadow-md"
+           >
+             <Navigation size={14} /> Navigate
+           </a>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-100 dark:border-slate-800 pt-6">

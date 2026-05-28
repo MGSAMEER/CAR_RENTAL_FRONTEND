@@ -21,10 +21,16 @@
     .page-container {
       padding-left: 1rem;
       padding-right: 1rem;
+      padding-top: 1.25rem;
+      padding-bottom: 1.25rem;
     }
     
     .card {
       padding: 1.25rem;
+      border-radius: 1.25rem;
+    }
+
+    .card-flat {
       border-radius: 1.25rem;
     }
   }
@@ -150,7 +156,7 @@
 
   /* Page container */
   .page-container {
-    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8;
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8;
   }
 
   /* Section heading */
@@ -179,24 +185,8 @@
     animation: slideUp 0.4s ease-in-out;
   }
 
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-
-  @keyframes slideUp {
-    from { transform: translateY(16px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-  }
-}
-
-@layer utilities {
-  .animate-fade-in {
-    animation: fadeIn 0.3s ease-in-out;
-  }
-
-  .animate-slide-up {
-    animation: slideUp 0.4s ease-in-out;
+  .animate-scale-in {
+    animation: scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
   @keyframes fadeIn {
@@ -207,5 +197,10 @@
   @keyframes slideUp {
     from { transform: translateY(16px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
+  }
+
+  @keyframes scaleIn {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
   }
 }

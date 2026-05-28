@@ -9,6 +9,7 @@ import { z } from 'zod';
 import { Car, Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
 import { authApi } from '@/lib/services';
 import toast from 'react-hot-toast';
+import Button from '@/components/ui/Button';
 
 const registerSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters').max(100),
@@ -102,9 +103,17 @@ export default function RegisterPage() {
               {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword.message}</p>}
             </div>
 
-            <button id="register-submit-btn" type="submit" disabled={isSubmitting} className="btn-primary w-full py-3">
-              {isSubmitting ? 'Creating account...' : 'Create Account'}
-            </button>
+            <Button
+              id="register-submit-btn"
+              type="submit"
+              disabled={isSubmitting}
+              variant="primary"
+              fullWidth
+              isLoading={isSubmitting}
+              className="py-3"
+            >
+              Create Account
+            </Button>
           </form>
 
           <p className="text-center text-sm text-gray-500 mt-5">

@@ -7,6 +7,7 @@ import CarCard from '@/components/cars/CarCard';
 import CarFiltersPanel from '@/components/cars/CarFilters';
 import LocationFilter from '@/components/cars/LocationFilter';
 import CarSkeleton from '@/components/ui/CarSkeleton';
+import Button from '@/components/ui/Button';
 import type { Car as CarType, CarFilters } from '@/lib/types';
 
 export default function CarsPage() {
@@ -75,12 +76,13 @@ export default function CarsPage() {
                 : 'Try adjusting your filters or wait for admins to add vehicles.'}
             </p>
             {selectedCity && (
-              <button
+              <Button
                 onClick={() => setSelectedCity('')}
-                className="btn-secondary text-sm"
+                variant="secondary"
+                size="sm"
               >
                 Show All Cities
-              </button>
+              </Button>
             )}
           </div>
         ) : (

@@ -2,10 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Car, Users, Gauge, Zap, Calendar, ArrowLeft, CheckCircle2, XCircle } from 'lucide-react';
+import { Car, Users, Gauge, Zap, Calendar, CheckCircle2, XCircle } from 'lucide-react';
 import { carsApi, bookingsApi, usersApi } from '@/lib/services';
 import { useAuthStore } from '@/lib/store';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import Button from '@/components/ui/Button';
+import Badge from '@/components/ui/Badge';
+import Breadcrumb from '@/components/ui/Breadcrumb';
+import BackButton from '@/components/ui/BackButton';
 import type { Car as CarType } from '@/lib/types';
 import PaymentModal from '@/components/payments/PaymentModal';
 import ReviewList from '@/components/cars/ReviewList';
@@ -133,15 +137,21 @@ export default function CarDetailPage() {
   if (!car) return (
     <div className="page-container text-center py-20">
       <p className="text-slate-500 dark:text-slate-400">Car not found</p>
-      <button onClick={() => router.back()} className="btn-secondary mt-4">Go Back</button>
+      <BackButton className="mt-4" />
     </div>
   );
 
   return (
     <div className="page-container animate-fade-in">
-      <button onClick={() => router.back()} className="flex items-center gap-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 mb-6 transition-colors" id="back-btn">
-        <ArrowLeft size={18} /> Back to Cars
-      </button>
+      <div className="mb-6 space-y-2">
+        <Breadcrumb
+          items={[
+            { label: 'Cars', href: '/cars' },
+            { label: car.name },
+          ]}
+        />
+        <BackButton label="Back to Cars" href="/cars" />
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
         {/* Car Image & Info */}
@@ -156,8 +166,8 @@ export default function CarDetailPage() {
             )}
             <div className="absolute top-4 right-4">
               {car.availability
-                ? <span className="badge-available"><CheckCircle2 size={13} /> Available</span>
-                : <span className="badge-unavailable"><XCircle size={13} /> Unavailable</span>
+                ? <Badge variant="available" icon={<CheckCircle2 size={13} />}>Available</Badge>
+                : <Badge variant="unavailable" icon={<XCircle size={13} />}>Unavailable</Badge>
               }
             </div>
           </div>
@@ -208,32 +218,32 @@ export default function CarDetailPage() {
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
                   <Calendar size={14} className="inline mr-1" /> Select Rental Dates
                 </label>
-                <div className="p-2 border border-slate-100 dark:border-slate-800 rounded-2xl bg-slate-50 dark:bg-slate-900/50 flex flex-col items-center">
-                  <RangeCalendar
-                    className="bg-transparent"
-                    minValue={now}
-                    value={selectedRange}
-                    onChange={(val) => setSelectedRange(val || undefined)}
-                    isDateUnavailable={isDateUnavailable}
-                  />
-                  <div className="flex gap-4 mt-2 text-[10px] uppercase tracking-wider font-bold">
-                    <div className="flex items-center gap-1.5">
-                      <div className="size-2 rounded-full bg-primary-600"></div>
-                      <span className="text-slate-500">Available</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <div className="size-2 rounded-full bg-red-500"></div>
-                      <span className="text-slate-500">Booked</span>
-                    </div>
-                  </div>
-                </div>
+<div className="p-2 sm:p-3 border border-slate-100 dark:border-slate-800 rounded-2xl bg-slate-50 dark:bg-slate-900/50 flex flex-col items-center">
+                   <RangeCalendar
+                     className="bg-transparent"
+                     minValue={now}
+                     value={selectedRange}
+                     onChange={(val) => setSelectedRange(val || undefined)}
+                     isDateUnavailable={isDateUnavailable}
+                   />
+                   <div className="flex gap-2 sm:gap-4 mt-2 text-[10px] sm:text-xs uppercase tracking-wider font-bold">
+                     <div className="flex items-center gap-1">
+                       <div className="size-1.5 sm:size-2 rounded-full bg-primary-600"></div>
+                       <span className="text-slate-500">Available</span>
+                     </div>
+                     <div className="flex items-center gap-1">
+                       <div className="size-1.5 sm:size-2 rounded-full bg-red-500"></div>
+                       <span className="text-slate-500">Booked</span>
+                     </div>
+                   </div>
+                 </div>
 
-                {selectedRange?.start && selectedRange?.end && (
-                  <div className="flex justify-between mt-3 px-1 text-xs text-slate-500 dark:text-slate-400 font-medium">
-                    <span>Pickup: {selectedRange.start.toString()}</span>
-                    <span>Return: {selectedRange.end.toString()}</span>
-                  </div>
-                )}
+                 {selectedRange?.start && selectedRange?.end && (
+                   <div className="flex justify-between mt-2 sm:mt-3 px-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
+                     <span>Pickup: {selectedRange.start.toString()}</span>
+                     <span>Return: {selectedRange.end.toString()}</span>
+                   </div>
+                 )}
               </div>
             </div>
 
@@ -251,14 +261,16 @@ export default function CarDetailPage() {
               </div>
             )}
 
-            <button
+            <Button
               id="confirm-booking-btn"
               onClick={handleBookClick}
               disabled={!car.availability}
-              className="btn-primary w-full py-3 text-base"
+              variant="primary"
+              fullWidth
+              className="py-3 text-base"
             >
               {car.availability ? '🚗 Book Now' : 'Not Available'}
-            </button>
+            </Button>
 
             {!isAuthenticated && (
               <p className="text-center text-sm text-slate-400 dark:text-slate-500 mt-3">
