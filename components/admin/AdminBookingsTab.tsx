@@ -10,8 +10,11 @@ import Badge from '@/components/ui/Badge';
 interface Props { bookings: Booking[]; setBookings: React.Dispatch<React.SetStateAction<Booking[]>>; }
 
 function MobileBookingCard({ booking, onCancel }: { booking: Booking; onCancel: (id: string) => void }) {
-  const days = formatDate(booking.startDate, null) && formatDate(booking.endDate, null) 
-    ? Math.max(1, Math.ceil((new Date(booking.endDate).getTime() - new Date(booking.startDate).getTime()) / 86400000) + 1)
+  // Safe days calculation
+  const startDate = booking.startDate ? new Date(booking.startDate) : null;
+  const endDate = booking.endDate ? new Date(booking.endDate) : null;
+  const days = (startDate && !isNaN(startDate.getTime()) && endDate && !isNaN(endDate.getTime()))
+    ? Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / 86400000) + 1)
     : 0;
 
   return (
@@ -59,11 +62,14 @@ export default function AdminBookingsTab({ bookings, setBookings }: Props) {
     try {
       const res = await bookingsApi.cancel(id);
       const updatedBooking = res.data?.data || res.data;
-      setBookings(prev => prev.map(b => b.id === id ? updatedBooking : b));
-      const refundInfo = updatedBooking?.refundAmount 
-        ? `Refund: ₹${updatedBooking.refundAmount}`
-        : 'No refund applicable';
-      toast.success(`Booking cancelled. ${refundInfo}`);
+      
+      if (updatedBooking && typeof updatedBooking === 'object' && 'id' in updatedBooking) {
+        setBookings(prev => prev.map(b => b.id === id ? (updatedBooking as Booking) : b));
+        const refundInfo = (updatedBooking as Booking).refundAmount 
+          ? `Refund: ₹${(updatedBooking as Booking).refundAmount}`
+          : 'No refund applicable';
+        toast.success(`Booking cancelled. ${refundInfo}`);
+      }
     } catch (err: any) {
       const errorMsg = err.response?.data?.message || err.response?.data?.error || 'Failed to cancel';
       toast.error(errorMsg);
