@@ -54,7 +54,7 @@ export default function AdminBookingsTab({ bookings, setBookings }: Props) {
     if (!confirm('Cancel this booking?')) return;
     try {
       const res = await bookingsApi.cancel(id);
-      const updatedBooking = res.data?.data || res.data;
+      const updatedBooking = res.data as unknown as Booking;
       setBookings(prev => prev.map(b => b.id === id ? updatedBooking : b));
       const refundInfo = updatedBooking?.refundAmount 
         ? `Refund: ₹${updatedBooking.refundAmount}`

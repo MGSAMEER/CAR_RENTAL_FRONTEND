@@ -86,7 +86,7 @@ export default function BookingsPage() {
   const handleCancel = async (bookingId: string, reason?: string) => {
     try {
       const res = await bookingsApi.cancel(bookingId, reason);
-      const updatedBooking = res.data?.data || res.data;
+      const updatedBooking = res.data as unknown as Booking;
       
       if (updatedBooking) {
         setBookings((prev) => prev.map((b) => b.id === bookingId ? updatedBooking : b));
