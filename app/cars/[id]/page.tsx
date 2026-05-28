@@ -29,7 +29,6 @@ export default function CarDetailPage() {
   const [booking, setBooking] = useState({ startDate: '', endDate: '' });
   const [showPayment, setShowPayment] = useState(false);
   const [bookedDates, setBookedDates] = useState<string[]>([]);
-  const [creatingBooking, setCreatingBooking] = useState(false);
 
   // Calendar State
   const now = getToday(getLocalTimeZone());
@@ -59,12 +58,12 @@ export default function CarDetailPage() {
   }, [selectedRange]);
 
   const totalDays = (booking.startDate && booking.endDate)
-    ? Math.max(0, Math.ceil((new Date(booking.endDate).getTime() - new Date(booking.startDate).getTime()) / 86400000) + 1
+    ? Math.max(0, Math.ceil((new Date(booking.endDate).getTime() - new Date(booking.startDate).getTime()) / 86400000) + 1)
     : 0;
   const totalCost = car ? totalDays * Number(car.pricePerDay) : 0;
 
   const isDateUnavailable = (date: DateValue) => {
-    const dateStr = date.toString();
+    const dateStr = date.toString(); // YYYY-MM-DD
     return bookedDates.includes(dateStr);
   };
 
@@ -83,10 +82,12 @@ export default function CarDetailPage() {
       return;
     }
 
+    // Double-check overlap on client side for safety
     const start = new Date(booking.startDate);
     const end = new Date(booking.endDate);
     const isOverlap = bookedDates.some(dateStr => {
       const d = new Date(dateStr);
+      // Normalize dates to same time for comparison
       d.setHours(0, 0, 0, 0);
       const s = new Date(start); s.setHours(0, 0, 0, 0);
       const e = new Date(end); e.setHours(0, 0, 0, 0);
@@ -123,27 +124,12 @@ export default function CarDetailPage() {
     console.log('[DEBUG] Sending snake_case booking payload:', payload);
 
     try {
-      setCreatingBooking(true);
-      const res = await bookingsApi.create(payload as any);
-      const existingBooking = res.data?.data && (res.data as any).message?.includes('already exists');
-      
-      toast.success(existingBooking 
-        ? 'Booking already exists for this payment! Redirecting...' 
-        : '🎉 Booking confirmed successfully!'
-      );
+      await bookingsApi.create(payload as any);
+      toast.success('🎉 Booking confirmed successfully!');
       router.push('/bookings');
     } catch (err: any) {
       console.error('[DEBUG] Booking API failed:', err.response?.data);
-      // Handle idempotency - booking already exists
-      if (err.response?.data?.error === 'DATE_CONFLICT') {
-        toast.error('This car is already booked for the selected dates. Please choose different dates.');
-      } else if (err.response?.data?.error === 'INVALID_PAYMENT_INTENT') {
-        toast.error('Invalid payment. Please try again.');
-      } else {
-        toast.error(err.response?.data?.message || 'Failed to finalize booking.');
-      }
-    } finally {
-      setCreatingBooking(false);
+      toast.error(err.response?.data?.message || 'Failed to finalize booking.');
     }
   };
 
@@ -233,31 +219,31 @@ export default function CarDetailPage() {
                   <Calendar size={14} className="inline mr-1" /> Select Rental Dates
                 </label>
 <div className="p-2 sm:p-3 border border-slate-100 dark:border-slate-800 rounded-2xl bg-slate-50 dark:bg-slate-900/50 flex flex-col items-center">
-                  <RangeCalendar
-                    className="bg-transparent"
-                    minValue={now}
-                    value={selectedRange}
-                    onChange={(val) => setSelectedRange(val || undefined)}
-                    isDateUnavailable={isDateUnavailable}
-                  />
-                  <div className="flex gap-2 sm:gap-4 mt-2 text-[10px] sm:text-xs uppercase tracking-wider font-bold">
-                    <div className="flex items-center gap-1">
-                      <div className="size-1.5 sm:size-2 rounded-full bg-primary-600"></div>
-                      <span className="text-slate-500">Available</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <div className="size-1.5 sm:size-2 rounded-full bg-red-500"></div>
-                      <span className="text-slate-500">Booked</span>
-                    </div>
-                  </div>
-                </div>
+                   <RangeCalendar
+                     className="bg-transparent"
+                     minValue={now}
+                     value={selectedRange}
+                     onChange={(val) => setSelectedRange(val || undefined)}
+                     isDateUnavailable={isDateUnavailable}
+                   />
+                   <div className="flex gap-2 sm:gap-4 mt-2 text-[10px] sm:text-xs uppercase tracking-wider font-bold">
+                     <div className="flex items-center gap-1">
+                       <div className="size-1.5 sm:size-2 rounded-full bg-primary-600"></div>
+                       <span className="text-slate-500">Available</span>
+                     </div>
+                     <div className="flex items-center gap-1">
+                       <div className="size-1.5 sm:size-2 rounded-full bg-red-500"></div>
+                       <span className="text-slate-500">Booked</span>
+                     </div>
+                   </div>
+                 </div>
 
-                {selectedRange?.start && selectedRange?.end && (
-                  <div className="flex justify-between mt-2 sm:mt-3 px-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
-                    <span>Pickup: {selectedRange.start.toString()}</span>
-                    <span>Return: {selectedRange.end.toString()}</span>
-                  </div>
-                )}
+                 {selectedRange?.start && selectedRange?.end && (
+                   <div className="flex justify-between mt-2 sm:mt-3 px-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
+                     <span>Pickup: {selectedRange.start.toString()}</span>
+                     <span>Return: {selectedRange.end.toString()}</span>
+                   </div>
+                 )}
               </div>
             </div>
 
@@ -308,8 +294,6 @@ export default function CarDetailPage() {
           endDate={booking.endDate}
           onClose={() => setShowPayment(false)}
           onSuccess={handlePaymentSuccess}
-          totalAmount={totalCost}
-          carName={`${car.brand} ${car.name}`}
         />
       )}
     </div>
