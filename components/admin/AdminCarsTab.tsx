@@ -101,7 +101,8 @@ export default function AdminCarsTab({ cars, setCars }: Props) {
       }
       setShowForm(false);
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to save car');
+      const errorMsg = err.response?.data?.message || err.response?.data?.error || 'Failed to save car';
+      toast.error(errorMsg, { duration: 5000 });
     } finally { setSaving(false); }
   };
 
