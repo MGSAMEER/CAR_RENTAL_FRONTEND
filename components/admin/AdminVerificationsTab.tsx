@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { adminApi } from '@/lib/services';
 import LoadingSpinner from '../ui/LoadingSpinner';
