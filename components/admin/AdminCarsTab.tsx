@@ -5,6 +5,8 @@ import { Plus, Pencil, Trash2, CheckCircle2, XCircle, X, Save } from 'lucide-rea
 import type { Car as CarType } from '@/lib/types';
 import { carsApi, branchesApi } from '@/lib/services';
 import toast from 'react-hot-toast';
+import Button from '@/components/ui/Button';
+import Badge from '@/components/ui/Badge';
 
 const emptyForm = {
   name: '', brand: '', model: '', type: 'sedan',
@@ -14,6 +16,47 @@ const emptyForm = {
 };
 
 interface Props { cars: CarType[]; setCars: React.Dispatch<React.SetStateAction<CarType[]>>; }
+
+function MobileCarCard({ car, onEdit, onDelete, onToggle }: { 
+  car: CarType; 
+  onEdit: (car: CarType) => void; 
+  onDelete: (id: string) => void; 
+  onToggle: (car: CarType) => void;
+}) {
+  return (
+    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm p-4 mb-3 last:mb-0">
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          {car.imageUrl && (
+            <img src={car.imageUrl} alt={car.name} className="w-16 h-12 object-cover rounded-lg border border-slate-100 dark:border-slate-700 shrink-0" />
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-base font-bold text-slate-900 dark:text-white truncate">{car.name}</p>
+            <p className="text-sm text-slate-600 dark:text-slate-300 capitalize">{car.type}</p>
+            <p className="text-xs text-slate-400">{car.brand}</p>
+          </div>
+        </div>
+        <div className="text-right shrink-0 ml-2">
+          <p className="text-lg font-bold text-slate-800 dark:text-white">₹{Number(car.pricePerDay).toLocaleString()}</p>
+          <p className="text-xs text-slate-400">/day</p>
+        </div>
+      </div>
+      <div className="flex justify-between items-center pt-3 border-t border-slate-100 dark:border-slate-700">
+        <Badge variant={car.availability ? 'available' : 'unavailable'} size="sm" className="capitalize">
+          {car.availability ? 'Available' : 'Unavailable'}
+        </Badge>
+        <div className="flex items-center gap-2">
+          <Button id={`mobile-edit-car-${car.id}`} onClick={() => onEdit(car)} variant="ghost" size="sm" className="p-1.5">
+            <Pencil size={14} />
+          </Button>
+          <Button id={`mobile-delete-car-${car.id}`} onClick={() => onDelete(car.id)} variant="ghost" size="sm" className="p-1.5 text-red-600 hover:text-red-700 dark:hover:bg-red-900/30">
+            <Trash2 size={14} />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function AdminCarsTab({ cars, setCars }: Props) {
   const [showForm, setShowForm] = useState(false);
@@ -40,12 +83,19 @@ export default function AdminCarsTab({ cars, setCars }: Props) {
   const handleSave = async () => {
     setSaving(true);
     try {
+      // Clean up form data - remove empty optional fields
+      const payload: any = { ...form };
+      if (!payload.imageUrl) delete payload.imageUrl;
+      if (!payload.description) delete payload.description;
+      if (!payload.branchId) delete payload.branchId;
+      if (!payload.model) delete payload.model;
+      
       if (editing) {
-        const res = await carsApi.update(editing.id, form as any);
+        const res = await carsApi.update(editing.id, payload);
         setCars(prev => prev.map(c => c.id === editing.id ? res.data.data! : c));
         toast.success('Car updated!');
       } else {
-        const res = await carsApi.create(form as any);
+        const res = await carsApi.create(payload);
         setCars(prev => [res.data.data!, ...prev]);
         toast.success('Car added!');
       }
@@ -76,12 +126,25 @@ export default function AdminCarsTab({ cars, setCars }: Props) {
     <div className="animate-slide-up">
       <div className="flex justify-between items-center mb-4">
         <p className="text-sm text-slate-500 dark:text-slate-400">{cars.length} cars in fleet</p>
-        <button id="add-car-btn" onClick={openAdd} className="btn-primary flex items-center gap-2 text-sm">
+        <Button id="add-car-btn" onClick={openAdd} variant="primary" size="sm">
           <Plus size={16} /> Add Car
-        </button>
+        </Button>
       </div>
 
-      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 overflow-hidden shadow-sm">
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-3">
+        {cars.map(car => (
+          <MobileCarCard key={car.id} car={car} onEdit={openEdit} onDelete={handleDelete} onToggle={toggleAvail} />
+        ))}
+        {cars.length === 0 && (
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-100 dark:border-slate-700 text-center">
+            <p className="text-sm text-slate-500 dark:text-slate-400">No cars found</p>
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -108,18 +171,27 @@ export default function AdminCarsTab({ cars, setCars }: Props) {
                   <td className="px-5 py-3.5 capitalize text-slate-600 dark:text-slate-300">{car.type}</td>
                   <td className="px-5 py-3.5 font-semibold text-slate-800 dark:text-white">₹{Number(car.pricePerDay).toLocaleString()}</td>
                   <td className="px-5 py-3.5">
-                    <button onClick={() => toggleAvail(car)} className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full transition-all ${car.availability ? 'badge-available' : 'badge-unavailable'}`}>
-                      {car.availability ? <><CheckCircle2 size={11} /> Available</> : <><XCircle size={11} /> Unavailable</>}
-                    </button>
+                    <Badge variant={car.availability ? 'available' : 'unavailable'} size="sm" icon={car.availability ? <CheckCircle2 size={11} /> : <XCircle size={11} />}>
+                      {car.availability ? 'Available' : 'Unavailable'}
+                    </Badge>
                   </td>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-2">
-                      <button id={`edit-car-btn-${car.id}`} onClick={() => openEdit(car)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-all"><Pencil size={14} /></button>
-                      <button id={`delete-car-btn-${car.id}`} onClick={() => handleDelete(car.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-all"><Trash2 size={14} /></button>
+                      <Button id={`edit-car-btn-${car.id}`} onClick={() => openEdit(car)} variant="ghost" size="sm" className="p-1.5">
+                        <Pencil size={14} />
+                      </Button>
+                      <Button id={`delete-car-btn-${car.id}`} onClick={() => handleDelete(car.id)} variant="ghost" size="sm" className="p-1.5 text-red-600 hover:text-red-700 dark:hover:bg-red-900/30">
+                        <Trash2 size={14} />
+                      </Button>
                     </div>
                   </td>
                 </tr>
               ))}
+              {cars.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-5 py-8 text-center text-slate-500 dark:text-slate-400">No cars found</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -187,10 +259,10 @@ export default function AdminCarsTab({ cars, setCars }: Props) {
                 <span className="text-sm text-slate-700 dark:text-slate-300">Available for booking</span>
               </label>
               <div className="flex gap-3 pt-2">
-                <button id="car-form-save-btn" onClick={handleSave} disabled={saving} className="btn-primary flex items-center gap-2 flex-1 justify-center">
-                  <Save size={15} /> {saving ? 'Saving...' : editing ? 'Update Car' : 'Add Car'}
-                </button>
-                <button onClick={() => setShowForm(false)} className="btn-secondary">Cancel</button>
+                <Button id="car-form-save-btn" onClick={handleSave} disabled={saving} isLoading={saving} variant="primary" icon={<Save size={15} />} iconPosition="left">
+                  {editing ? 'Update Car' : 'Add Car'}
+                </Button>
+                <Button onClick={() => setShowForm(false)} variant="secondary">Cancel</Button>
               </div>
             </div>
           </div>

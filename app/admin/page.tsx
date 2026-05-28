@@ -18,6 +18,7 @@ import AdminBookingsTab from '@/components/admin/AdminBookingsTab';
 import AdminUsersTab from '@/components/admin/AdminUsersTab';
 import AdminPaymentsTab from '@/components/admin/AdminPaymentsTab';
 import AdminVerificationsTab from '@/components/admin/AdminVerificationsTab';
+import Badge from '@/components/ui/Badge';
 
 type Tab = 'overview' | 'cars' | 'bookings' | 'users' | 'payments' | 'verifications';
 interface ExtUser extends User { isBlocked?: boolean; }
@@ -194,29 +195,51 @@ function AdminPageInner() {
 
   return (
     <div className="animate-fade-in space-y-6">
-      {/* Tab bar */}
-      <div className="flex gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl w-fit">
-        {tabs.map(t => (
-          <button
-            key={t.id}
-            id={`admin-tab-${t.id}`}
-            onClick={() => switchTab(t.id)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-              tab === t.id
-                ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white'
-            }`}
-          >
-            <t.icon size={15} /> {t.label}
-          </button>
-        ))}
+      {/* Breadcrumb Navigation (Mobile: tabs, Desktop: full tabs) */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-2">
+        {/* Mobile: Scrollable tabs instead of dropdown */}
+        <div className="flex sm:hidden gap-2 overflow-x-auto pb-2 -mx-1 px-1">
+          {tabs.map(t => (
+            <button
+              key={t.id}
+              id={`admin-tab-${t.id}`}
+              onClick={() => switchTab(t.id)}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 flex-shrink-0 whitespace-nowrap ${
+                tab === t.id
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+              }`}
+            >
+              <t.icon size={14} />
+              {t.label}
+            </button>
+          ))}
+        </div>
+        
+        {/* Tab bar (visible on desktop) */}
+        <div className="hidden sm:flex gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl w-fit overflow-x-auto">
+          {tabs.map(t => (
+            <button
+              key={t.id}
+              id={`admin-tab-${t.id}`}
+              onClick={() => switchTab(t.id)}
+              className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 flex-shrink-0 ${
+                tab === t.id
+                  ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white'
+              }`}
+            >
+              <t.icon size={15} /> <span className="hidden sm:inline">{t.label}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* OVERVIEW */}
       {tab === 'overview' && (
         <div className="space-y-6 animate-slide-up">
-          {/* KPI cards */}
-          <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+          {/* KPI cards - 2 column on mobile, 4 on xl */}
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
             <StatCard label="Total Revenue" value={`₹${Number(stats?.totalRevenue || 0).toLocaleString()}`} icon={DollarSign} color="bg-gradient-to-br from-blue-500 to-blue-600" growth={stats?.revenueGrowth} />
             <StatCard label="Total Bookings" value={String(stats?.totalBookings || 0)} icon={BookOpen} color="bg-gradient-to-br from-violet-500 to-violet-600" growth={stats?.bookingGrowth} />
             <StatCard label="Active Bookings" value={String(stats?.activeBookings || 0)} icon={Activity} color="bg-gradient-to-br from-emerald-500 to-emerald-600" />
@@ -224,20 +247,20 @@ function AdminPageInner() {
           </div>
 
           {/* Charts */}
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-5">
             <RevenueChart data={revenue} />
             <BookingsChart data={bookingsChart} />
           </div>
 
           {/* Bottom row */}
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-5">
             {/* Top cars */}
-            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm p-5">
-              <h3 className="font-semibold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm p-4 sm:p-5">
+              <h3 className="font-semibold text-slate-800 dark:text-white mb-3 sm:mb-4 flex items-center gap-2">
                 <TrendingUp size={16} className="text-blue-500" /> Most Rented Cars
               </h3>
               <div className="space-y-3">
-                {topCars.map((tc, i) => (
+                {topCars.slice(0, 5).map((tc, i) => (
                   <div key={tc.car?.id} className="flex items-center gap-3">
                     <span className="w-6 h-6 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center text-xs font-bold text-slate-500 dark:text-slate-400 shrink-0">{i + 1}</span>
                     {tc.car?.imageUrl && <img src={tc.car.imageUrl} alt={tc.car.name} className="w-10 h-7 object-cover rounded-lg border border-slate-100 dark:border-slate-700" />}
@@ -256,8 +279,8 @@ function AdminPageInner() {
             </div>
 
             {/* Recent bookings */}
-            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm p-5">
-              <h3 className="font-semibold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm p-4 sm:p-5">
+              <h3 className="font-semibold text-slate-800 dark:text-white mb-3 sm:mb-4 flex items-center gap-2">
                 <BookOpen size={16} className="text-violet-500" /> Recent Bookings
               </h3>
               <div className="space-y-3">
@@ -269,9 +292,9 @@ function AdminPageInner() {
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-bold text-slate-800 dark:text-white">₹{Number(b.totalCost).toLocaleString()}</p>
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${b.status === 'cancelled' ? 'bg-slate-100 dark:bg-slate-700 text-slate-500' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'}`}>
+                      <Badge variant={b.status === 'cancelled' ? 'cancelled' : 'confirmed'} size="sm" className="mt-0.5">
                         {b.status}
-                      </span>
+                      </Badge>
                     </div>
                   </div>
                 ))}
