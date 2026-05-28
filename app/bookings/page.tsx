@@ -9,6 +9,7 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import LeaveReviewModal from '@/components/cars/LeaveReviewModal';
+import CancelBookingModal from '@/components/bookings/CancelBookingModal';
 import type { Booking } from '@/lib/types';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
@@ -28,29 +29,14 @@ export default function BookingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const [reviewCar, setReviewCar] = useState<{ id: string, name: string } | null>(null);
+  const [cancelModal, setCancelModal] = useState<{ id: string, carName: string, startDate: string, totalCost: number } | null>(null);
 
   const fetchBookings = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      console.log('[BOOKINGS PAGE] Fetching bookings...', { 
-        authenticated: isAuthenticated, 
-        userRole: user?.role,
-        retryAttempt: retryCount 
-      });
-      
       const res = await bookingsApi.getAll();
-      
-      console.log('[BOOKINGS PAGE] Bookings fetched successfully', {
-        count: Array.isArray(res.data?.data) ? res.data.data.length : 0,
-        hasData: !!res.data?.data,
-        responseStructure: {
-          success: res.data?.success,
-          dataType: typeof res.data?.data,
-          isArray: Array.isArray(res.data?.data),
-        }
-      });
       
       const bookingsData = res.data?.data || [];
       if (!Array.isArray(bookingsData)) {
@@ -61,14 +47,6 @@ export default function BookingsPage() {
       setRetryCount(0);
       
     } catch (err: any) {
-      console.error('[BOOKINGS PAGE] Error fetching bookings', {
-        errorMessage: err.message,
-        errorCode: err.response?.data?.error,
-        status: err.response?.status,
-        responseData: err.response?.data,
-        stack: err.stack,
-      });
-      
       let errorMessage = 'Failed to load bookings';
       
       if (err.response?.status === 401) {
@@ -105,17 +83,34 @@ export default function BookingsPage() {
     fetchBookings();
   };
 
-  const handleCancel = async (id: string) => {
-    if (!confirm('Are you sure you want to cancel this booking?')) return;
+  const handleCancel = async (bookingId: string, reason?: string) => {
     try {
-      await bookingsApi.cancel(id);
-      toast.success('Booking cancelled');
-      setBookings((prev) => prev.map((b) => b.id === id ? { ...b, status: 'cancelled' } : b));
+      const res = await bookingsApi.cancel(bookingId, reason);
+      const updatedBooking = res.data?.data;
+      
+      if (updatedBooking) {
+        setBookings((prev) => prev.map((b) => b.id === bookingId ? updatedBooking : b));
+        
+        const refundInfo = updatedBooking.refundAmount 
+          ? `Refund: ₹${updatedBooking.refundAmount} (${updatedBooking.refundStatus === 'processed' ? 'processed' : 'pending'})`
+          : 'No refund applicable';
+        
+        toast.success(`Booking cancelled! ${refundInfo}`, { duration: 6000 });
+      }
     } catch (err: any) {
-      const errorMsg = err.response?.data?.message || 'Failed to cancel booking';
-      console.error('[BOOKINGS PAGE] Cancel error', { errorMsg, status: err.response?.status });
-      toast.error(errorMsg);
+      const errorMsg = err.response?.data?.message || err.response?.data?.error || 'Failed to cancel booking';
+      toast.error(errorMsg, { duration: 5000 });
+      throw err;
     }
+  };
+
+  const handleCancelClick = (booking: Booking) => {
+    setCancelModal({
+      id: booking.id,
+      carName: booking.car ? `${booking.car.brand} ${booking.car.name}` : 'Unknown Car',
+      startDate: booking.startDate,
+      totalCost: booking.totalCost
+    });
   };
 
   if (loading) return <LoadingSpinner fullPage text="Loading your bookings..." />;
@@ -131,7 +126,7 @@ export default function BookingsPage() {
         </p>
       </div>
 
-      {/* ✅ Error state UI */}
+      {/* Error state UI */}
       {error && (
         <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-start gap-3">
           <AlertCircle size={20} className="text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
@@ -141,7 +136,7 @@ export default function BookingsPage() {
               Check browser console for detailed error logs. Network: {navigator.onLine ? 'Online ✓' : 'Offline ✗'}
             </p>
           </div>
-<Button onClick={handleRetry} variant="danger" size="sm" icon={<RotateCw size={14} />}>Retry</Button>
+          <Button onClick={handleRetry} variant="danger" size="sm" icon={<RotateCw size={14} />}>Retry</Button>
         </div>
       )}
 
@@ -177,7 +172,6 @@ export default function BookingsPage() {
                       {user?.role === 'admin' && booking.user && (
                         <p className="text-xs text-gray-400 truncate">{booking.user.name} · {booking.user.email}</p>
                       )}
-                      {/* Date range: vertical stack on mobile, horizontal on desktop */}
                       <div className="flex flex-col gap-1 mt-2 text-sm text-gray-500">
                         <div className="flex items-center gap-2">
                           <span className="font-medium">{format(new Date(booking.startDate), 'dd MMM yyyy')}</span>
@@ -191,7 +185,6 @@ export default function BookingsPage() {
                     </div>
                   </div>
 
-                  {/* Status, price, and actions: stack on mobile, horizontal on desktop */}
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 pt-3 sm:pt-0 border-t sm:border-t-0 sm:border-l border-gray-200 dark:border-gray-700 sm:pl-4">
                     <div className="flex items-center gap-3 sm:gap-4">
                       <Badge variant={status.variant} size="sm" icon={<StatusIcon size={12} />}>
@@ -201,7 +194,12 @@ export default function BookingsPage() {
                     </div>
                     <div className="flex gap-2">
                       {booking.status === 'confirmed' && (
-                        <Button id={`cancel-booking-btn-${booking.id}`} onClick={() => handleCancel(booking.id)} variant="danger" size="sm">
+                        <Button 
+                          id={`cancel-booking-btn-${booking.id}`} 
+                          onClick={() => handleCancelClick(booking)} 
+                          variant="danger" 
+                          size="sm"
+                        >
                           Cancel
                         </Button>
                       )}
@@ -231,6 +229,17 @@ export default function BookingsPage() {
             setReviewCar(null);
             fetchBookings();
           }}
+        />
+      )}
+
+      {cancelModal && (
+        <CancelBookingModal
+          bookingId={cancelModal.id}
+          carName={cancelModal.carName}
+          startDate={cancelModal.startDate}
+          totalCost={cancelModal.totalCost}
+          onCancel={handleCancel}
+          onClose={() => setCancelModal(null)}
         />
       )}
     </div>

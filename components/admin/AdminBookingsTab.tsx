@@ -30,6 +30,11 @@ function MobileBookingCard({ booking, onCancel }: { booking: Booking; onCancel: 
           <Badge variant={booking.paymentStatus === 'paid' ? 'available' : booking.paymentStatus === 'pending' ? 'warning' : 'unavailable'} size="sm">
             {booking.paymentStatus || 'pending'}
           </Badge>
+          {booking.refundAmount !== undefined && (
+            <Badge variant={booking.refundStatus === 'processed' ? 'available' : 'warning'} size="sm">
+              Refund: ₹{booking.refundAmount}
+            </Badge>
+          )}
         </div>
         <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
           <span>{format(new Date(booking.startDate), 'dd MMM')} → {format(new Date(booking.endDate), 'dd MMM yy')}</span>
@@ -48,11 +53,15 @@ export default function AdminBookingsTab({ bookings, setBookings }: Props) {
   const handleCancel = async (id: string) => {
     if (!confirm('Cancel this booking?')) return;
     try {
-      await bookingsApi.cancel(id);
-      setBookings(prev => prev.map(b => b.id === id ? { ...b, status: 'cancelled' as const } : b));
-      toast.success('Booking cancelled');
+      const res = await bookingsApi.cancel(id);
+      setBookings(prev => prev.map(b => b.id === id ? res.data : b));
+      const refundInfo = res.data?.refundAmount 
+        ? `Refund: ₹${res.data.refundAmount}`
+        : 'No refund applicable';
+      toast.success(`Booking cancelled. ${refundInfo}`);
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to cancel');
+      const errorMsg = err.response?.data?.message || err.response?.data?.error || 'Failed to cancel';
+      toast.error(errorMsg);
     }
   };
 
@@ -88,7 +97,7 @@ export default function AdminBookingsTab({ bookings, setBookings }: Props) {
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-slate-50 dark:bg-slate-700/50">
-                {['Car', 'Customer', 'Dates', 'Total', 'Payment', 'Status', 'Action'].map(h => (
+                {['Car', 'Customer', 'Dates', 'Total', 'Payment', 'Status', 'Refund', 'Action'].map(h => (
                   <th key={h} className="text-left px-5 py-3.5 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">{h}</th>
                 ))}
               </tr>
@@ -116,6 +125,16 @@ export default function AdminBookingsTab({ bookings, setBookings }: Props) {
                     </Badge>
                   </td>
                   <td className="px-5 py-3.5">
+                    {b.refundAmount !== undefined ? (
+                      <div className="text-xs">
+                        <p className="font-bold text-slate-800 dark:text-white">₹{b.refundAmount}</p>
+                        <Badge variant={b.refundStatus === 'processed' ? 'available' : 'warning'} size="sm" className="mt-1">
+                          {b.refundStatus || 'not_requested'}
+                        </Badge>
+                      </div>
+                    ) : null}
+                  </td>
+                  <td className="px-5 py-3.5">
                     {(b.status === 'confirmed' || b.status === 'active') && (
                       <Button id={`admin-cancel-booking-${b.id}`} onClick={() => handleCancel(b.id)} variant="danger" size="sm">
                         Cancel
@@ -126,7 +145,7 @@ export default function AdminBookingsTab({ bookings, setBookings }: Props) {
               ))}
               {bookings.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-5 py-8 text-center text-slate-500 dark:text-slate-400">No bookings found</td>
+                  <td colSpan={8} className="px-5 py-8 text-center text-slate-500 dark:text-slate-400">No bookings found</td>
                 </tr>
               )}
             </tbody>

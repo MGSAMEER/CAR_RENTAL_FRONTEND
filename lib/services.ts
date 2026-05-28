@@ -63,8 +63,8 @@ export const bookingsApi = {
   getById: (id: string) =>
     api.get<ApiResponse<Booking>>(`/bookings/${id}`),
 
-  cancel: (id: string) =>
-    api.patch<ApiResponse<Booking>>(`/bookings/${id}/cancel`),
+  cancel: (id: string, reason?: string) =>
+    api.patch<ApiResponse<Booking>>(`/bookings/${id}/cancel`, { reason }),
 
   getBookedDates: (carId: string) =>
     api.get<ApiResponse<{ ranges: { startDate: string, endDate: string }[], individualDates: string[] }>>(`/bookings/car/${carId}/dates`),
